@@ -18,7 +18,7 @@ public class Test1 extends BaseSolrCloudTest {
 	public void test1() {
 		try {
 			CollectionAdminRequest.Delete request = new CollectionAdminRequest.Delete();
-			request.setCollectionName("test1");
+			request.setCollectionName("test2");
 			NamedList<Object> nl = client.request(request);
 			System.out.println(nl);
 		} catch (SolrServerException e) {
@@ -37,10 +37,21 @@ public class Test1 extends BaseSolrCloudTest {
 	public void test2() {
 		try {
 			CollectionAdminRequest.Create request = new CollectionAdminRequest.Create();
-			request.setCollectionName("test1");
-			request.setNumShards(4);
-			request.setReplicationFactor(3);
+			request.setCollectionName("test2");
+			
+//			request.setNumShards(4);
+//			request.setReplicationFactor(3);
 //			request.setAutoAddReplicas(true);
+//			request.setMaxShardsPerNode(6);
+			
+			/**
+			 * 路由的两种方式
+			 * implicit：指定shard
+			 * compositeId：哈希算法分布（默认）
+			 */
+			request.setRouterName("implicit");
+			request.setRouterField("_router_");
+			request.setShards("a,b,c,d");
 			request.setMaxShardsPerNode(6);
 			NamedList<Object> nl = client.request(request);
 			System.out.println(nl);
@@ -88,6 +99,42 @@ public class Test1 extends BaseSolrCloudTest {
 		try {
 			CollectionAdminRequest.Reload request = new CollectionAdminRequest.Reload();
 			request.setCollectionName("test1");
+			NamedList<Object> nl = client.request(request);
+			System.out.println(nl);
+		} catch (SolrServerException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 给collection增加shard，只支持implicit的路由模式
+	 */
+	@Test
+	public void test6() {
+		try {
+			CollectionAdminRequest.CreateShard request = new CollectionAdminRequest.CreateShard();
+			request.setCollectionName("test2");
+			request.setShardName("temp");
+			NamedList<Object> nl = client.request(request);
+			System.out.println(nl);
+		} catch (SolrServerException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 添加备份分片
+	 */
+	@Test
+	public void test7() {
+		try {
+			CollectionAdminRequest.AddReplica request = new CollectionAdminRequest.AddReplica();
+			request.setCollectionName("test2");
+			request.setShardName("temp");
 			NamedList<Object> nl = client.request(request);
 			System.out.println(nl);
 		} catch (SolrServerException e) {
