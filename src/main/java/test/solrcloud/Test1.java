@@ -9,6 +9,8 @@ import org.apache.solr.client.solrj.request.CollectionAdminRequest;
 import org.apache.solr.common.util.NamedList;
 import org.junit.Test;
 
+import com.alibaba.fastjson.JSON;
+
 public class Test1 extends BaseSolrCloudTest {
 	
 	/**
@@ -128,13 +130,15 @@ public class Test1 extends BaseSolrCloudTest {
 	
 	/**
 	 * 添加备份分片
+	 * 添加时会验证maxShardsOfNode
+	 * 支持两种路由
 	 */
 	@Test
 	public void test7() {
 		try {
 			CollectionAdminRequest.AddReplica request = new CollectionAdminRequest.AddReplica();
-			request.setCollectionName("test2");
-			request.setShardName("temp");
+			request.setCollectionName("test1");
+			request.setShardName("shard1_1");
 			NamedList<Object> nl = client.request(request);
 			System.out.println(nl);
 		} catch (SolrServerException e) {
@@ -143,5 +147,79 @@ public class Test1 extends BaseSolrCloudTest {
 			e.printStackTrace();
 		}
 	}
-
+	
+	/**
+	 * split shard分片的分裂，专为compositeId类型路由的分片进行增加分片的处理
+	 * 将原有分片的数据平均分成两个分片，之后就可以删除原有的分片
+	 */
+	@Test
+	public void test8() {
+		try {
+			CollectionAdminRequest.SplitShard request = new CollectionAdminRequest.SplitShard();
+			request.setCollectionName("test1");
+			request.setShardName("shard1");
+			NamedList<Object> nl = client.request(request);
+			System.out.println(nl);
+		} catch (SolrServerException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 删除分片
+	 */
+	@Test
+	public void test9() {
+		try {
+			CollectionAdminRequest.DeleteShard request = new CollectionAdminRequest.DeleteShard();
+			request.setCollectionName("test1");
+			request.setShardName("shard1");
+			NamedList<Object> nl = client.request(request);
+			System.out.println(nl);
+		} catch (SolrServerException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 删除备份 replica
+	 */
+	@Test
+	public void test10() {
+		try {
+			CollectionAdminRequest.DeleteReplica request = new CollectionAdminRequest.DeleteReplica();
+			request.setCollectionName("test1");
+			request.setShardName("shard4");
+			request.setReplica("core_node9");
+			NamedList<Object> nl = client.request(request);
+			System.out.println(nl);
+		} catch (SolrServerException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 查看集群情况
+	 */
+	@Test
+	public void test11() {
+		try {
+			CollectionAdminRequest.ClusterStatus request = new CollectionAdminRequest.ClusterStatus();
+			request.setCollectionName("test1");
+			NamedList<Object> nl = client.request(request);
+			String str = JSON.toJSONString(nl.asMap(Integer.MAX_VALUE), true);
+			System.err.println(str);
+		} catch (SolrServerException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 }
