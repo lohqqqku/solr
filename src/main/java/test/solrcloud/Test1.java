@@ -83,8 +83,8 @@ public class Test1 extends BaseSolrCloudTest {
 	@Test
 	public void test4() {
 		try {
-			File file = new File("C:\\Users\\Administrator\\Desktop\\SolrCloudConfig");
-			client.uploadConfig(Paths.get(file.toURI()), "test1");
+			File file = new File("C:\\Users\\Administrator\\Desktop\\SolrCloudConfig\\data_driven_schema_configs\\conf");
+			client.uploadConfig(Paths.get(file.toURI()), "test2");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -100,7 +100,7 @@ public class Test1 extends BaseSolrCloudTest {
 	public void test5() {
 		try {
 			CollectionAdminRequest.Reload request = new CollectionAdminRequest.Reload();
-			request.setCollectionName("test1");
+			request.setCollectionName("test2");
 			NamedList<Object> nl = client.request(request);
 			System.out.println(nl);
 		} catch (SolrServerException e) {
