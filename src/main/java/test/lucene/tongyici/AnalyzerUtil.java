@@ -7,12 +7,12 @@ import java.util.Map;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.synonym.SynonymFilterFactory;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.util.ClasspathResourceLoader;
 import org.wltea.analyzer.core.IKSegmenter;
 import org.wltea.analyzer.core.Lexeme;
+import org.wltea.analyzer.lucene.IKAnalyzer;
 
 /** 
  * 此类描述的是：
@@ -47,9 +47,12 @@ public class AnalyzerUtil {
         filterArgs.put("expand", "true");
         SynonymFilterFactory factory = new SynonymFilterFactory(filterArgs);
         factory.inform(new ClasspathResourceLoader());
-        Analyzer whitespaceAnalyzer = new WhitespaceAnalyzer();
-        TokenStream ts = factory.create(whitespaceAnalyzer.tokenStream("someField", input));
-        whitespaceAnalyzer.close();
+//        Analyzer whitespaceAnalyzer = new WhitespaceAnalyzer();
+//        TokenStream ts = factory.create(whitespaceAnalyzer.tokenStream("someField", input));
+//        whitespaceAnalyzer.close();
+        Analyzer analyzer = new IKAnalyzer();
+        TokenStream ts = factory.create(analyzer.tokenStream("somefield", input));
+        analyzer.close();
         return ts;
 	}
 	
@@ -81,7 +84,8 @@ public class AnalyzerUtil {
     	System.out.println("**********************");
 		try {
 			System.out.println(analyzeChinese(input, true));
-			String result = displayTokens(convertSynonym(analyzeChinese(input, true)));
+//			String result = displayTokens(convertSynonym(analyzeChinese(input, true)));
+			String result = displayTokens(convertSynonym(input));
 			System.out.println(result);
 //			MyIndexer.createIndex(indexPath);
 //			List<String> docs = MySearcher.searchIndex(result, indexPath);
@@ -91,6 +95,7 @@ public class AnalyzerUtil {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
 	}
 
 }

@@ -1,7 +1,9 @@
 package test.solrcloud;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.solr.client.solrj.SolrQuery;
@@ -15,6 +17,7 @@ import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 public class Test2 extends BaseSolrCloudTest {
@@ -35,6 +38,9 @@ public class Test2 extends BaseSolrCloudTest {
 		}
 	}
 	
+	/**
+	 * 新增field
+	 */
 	@Test
 	public void test2() {
 		/**
@@ -103,14 +109,31 @@ public class Test2 extends BaseSolrCloudTest {
 	@Test
 	public void test3() {
 		try {
-			AnalyzerDefinition analyzer = new AnalyzerDefinition();
-			analyzer.setTokenizer(ImmutableMap.of("class"
+			AnalyzerDefinition indexAnalyzer = new AnalyzerDefinition();
+			indexAnalyzer.setTokenizer(ImmutableMap.of("class"
 					, "org.apache.lucene.analysis.ik.IKTokenizerFactory"
 //					, "useSmart", "true"
 					));
 			
+			AnalyzerDefinition queryAnalyzer = new AnalyzerDefinition();
+			queryAnalyzer.setTokenizer(ImmutableMap.of("class"
+					, "org.apache.lucene.analysis.ik.IKTokenizerFactory"
+//					, "useSmart", "true"
+					));
+			
+			List<Map<String, Object>> filters = new ArrayList<>();
+			filters.add(ImmutableMap.of("class", "solr.SynonymFilterFactory"
+					, "synonyms", "synonyms.txt", "ignoreCase", true));
+			queryAnalyzer.setFilters(filters);
+			/**
+			 * 同义词过滤器
+			 * <filter class="solr.SynonymFilterFactory" expand="true" ignoreCase="true" synonyms="synonyms.txt"/>
+			 */
+			
+			
 			FieldTypeDefinition fieldType = new FieldTypeDefinition();
-			fieldType.setAnalyzer(analyzer);
+			fieldType.setIndexAnalyzer(indexAnalyzer);
+			fieldType.setQueryAnalyzer(queryAnalyzer);
 			fieldType.setAttributes(ImmutableMap.of("name", "text_ik", "class", "solr.TextField"));
 			SchemaRequest.AddFieldType request = new SchemaRequest.AddFieldType(fieldType);
 			NamedList<Object> nl = client.request(request, "test2");
@@ -160,7 +183,7 @@ public class Test2 extends BaseSolrCloudTest {
 	@Test
 	public void test6() {
 		try {
-			SchemaRequest.DeleteField request = new SchemaRequest.DeleteField("name");
+			SchemaRequest.DeleteField request = new SchemaRequest.DeleteField("content");
 			NamedList<Object> nl = client.request(request, "test2");
 			System.out.println(nl);
 		} catch (SolrServerException e) {
@@ -170,8 +193,60 @@ public class Test2 extends BaseSolrCloudTest {
 		}
 	}
 	
+	/**
+	 * 删除copyField
+	 */
+	@Test
+	public void test6_1() {
+		try {
+			SchemaRequest.DeleteCopyField request = new SchemaRequest.DeleteCopyField("title", ImmutableList.of("content"));
+			NamedList<Object> nl = client.request(request, "test2");
+			System.out.println(nl);
+			
+			SchemaRequest.DeleteCopyField request2 = new SchemaRequest.DeleteCopyField("name", ImmutableList.of("content"));
+			NamedList<Object> nl2 = client.request(request2, "test2");
+			System.out.println(nl2);
+		} catch (SolrServerException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 新增copyField
+	 */
 	@Test
 	public void test7() {
+		try {
+			Map<String, Object> fieldAttributes1 = new HashMap<>();
+			fieldAttributes1.put("name", "content");
+			fieldAttributes1.put("type", "text_ik");
+			fieldAttributes1.put("multiValued", true);
+			SchemaRequest.AddField request1 = new SchemaRequest.AddField(fieldAttributes1);
+			NamedList<Object> nl1 = client.request(request1, "test2");
+			System.out.println(nl1);
+			Map<String, Object> fieldAttributes2 = new HashMap<>();
+			fieldAttributes2.put("name", "title");
+			fieldAttributes2.put("type", "text_ik");
+			SchemaRequest.AddField request2 = new SchemaRequest.AddField(fieldAttributes2);
+			NamedList<Object> nl2 = client.request(request2, "test2");
+			System.out.println(nl2);
+			
+			
+			SchemaRequest.AddCopyField request3 = new SchemaRequest.AddCopyField("title", ImmutableList.of("content"));
+			NamedList<Object> nl3 = client.request(request3, "test2");
+			System.out.println(nl3);
+			
+			SchemaRequest.AddCopyField request4 = new SchemaRequest.AddCopyField("name", ImmutableList.of("content"));
+			NamedList<Object> nl4 = client.request(request4, "test2");
+			System.out.println(nl4);
+			
+		} catch (SolrServerException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	//----------------------------------------动态field的分词测试--------------------------------------------//
@@ -181,7 +256,8 @@ public class Test2 extends BaseSolrCloudTest {
 		try {
 			SolrInputDocument doc = new SolrInputDocument();
 			doc.addField("id", 1);
-			doc.addField("name", "今天天气真好");
+			doc.addField("name", "我有一台电脑");
+			doc.addField("title", "南无观世音菩萨");
 			doc.addField("_router_", "a");
 			client.add("test2", doc);
 			client.commit("test2");
@@ -195,7 +271,7 @@ public class Test2 extends BaseSolrCloudTest {
 	@Test
 	public void test80() {
 		try {
-			QueryResponse qr = client.query("test2", new SolrQuery("name:今天"));
+			QueryResponse qr = client.query("test2", new SolrQuery("name:计算机"));
 			System.out.println(qr);
 		} catch (SolrServerException e) {
 			e.printStackTrace();
@@ -207,7 +283,7 @@ public class Test2 extends BaseSolrCloudTest {
 	@Test
 	public void test90() {
 		try {
-			UpdateResponse ur = client.deleteById("test2", "1");
+			UpdateResponse ur = client.deleteByQuery("test2", "*:*");
 			client.commit("test2");
 			System.out.println(ur);
 		} catch (SolrServerException e) {
@@ -216,5 +292,5 @@ public class Test2 extends BaseSolrCloudTest {
 			e.printStackTrace();
 		}
 	}
-
+	
 }
